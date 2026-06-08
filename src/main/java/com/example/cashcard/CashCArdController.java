@@ -35,14 +35,17 @@ class CashCardController {
         return ResponseEntity.ok(page.getContent());
     }
 
+//    Reduce Code Duplication
+    private CashCard findCashCard(Long requestedId, Principal principal){
+        return cashCardRepository.findByIdAndOwner(requestedId, principal.getName());
+    }
+
     @GetMapping("/{requestedId}")
     private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
 
-        Optional<CashCard> cashCardOptional = Optional.ofNullable(cashCardRepository
-                .findByIdAndOwner(requestedId, principal.getName())
-        );
-        if (cashCardOptional.isPresent()) {
-            return ResponseEntity.ok(cashCardOptional.get());
+        CashCard cashCard = findCashCard(requestedId, principal);
+        if (cashCard != null) {
+            return ResponseEntity.ok(cashCard);
         }
         else{
             return ResponseEntity.notFound().build(); //.build() => it returns the empty body
@@ -61,5 +64,17 @@ class CashCardController {
                 .buildAndExpand(saveCashcard.id())
                 .toUri();
         return ResponseEntity.created(locationOfNewCashCard).build();
+    }
+
+    @PutMapping("/{requestedId}")
+    private ResponseEntity<Void> putCashCard(@PathVariable Long requestedId, @RequestBody CashCard cashCardUpdate, Principal principal) {
+        // just return 204 NO CONTENT for now.
+        CashCard cashCard = findCashCard(requestedId, principal);
+        if (null != cashCard) {
+            CashCard updatedCashCard = new CashCard(cashCard.id(), cashCardUpdate.amount(), principal.getName());
+            cashCardRepository.save(updatedCashCard);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }
