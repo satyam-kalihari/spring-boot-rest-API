@@ -33,6 +33,9 @@ class CashCardApplicationTests {
 
 		Double amount = documentContext.read("$.amount");
 		assertThat(amount).isEqualTo(123.45);
+
+		String selfLink = documentContext.read("$._links.self.href");
+		assertThat(selfLink).contains("/cashcards/99");
 	}
 
 	@Test
@@ -76,7 +79,7 @@ class CashCardApplicationTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
-		int cashCardCount = documentContext.read("$.length()");
+		int cashCardCount = documentContext.read("$._embedded.cashCardList.length()");
 		assertThat(cashCardCount).isEqualTo(3);
 
 		JSONArray ids = documentContext.read("$..id");
@@ -94,7 +97,7 @@ class CashCardApplicationTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
-		JSONArray page = documentContext.read("$[*]");
+		JSONArray page = documentContext.read("$._embedded.cashCardList");
 		assertThat(page.size()).isEqualTo(1);
 	}
 
@@ -106,10 +109,10 @@ class CashCardApplicationTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
-		JSONArray read = documentContext.read("$[*]");
+		JSONArray read = documentContext.read("$._embedded.cashCardList");
 		assertThat(read.size()).isEqualTo(1);
 
-		double amount = documentContext.read("$[0].amount");
+		double amount = documentContext.read("$._embedded.cashCardList[0].amount");
 		assertThat(amount).isEqualTo(150.00);
 	}
 
@@ -121,7 +124,7 @@ class CashCardApplicationTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
-		JSONArray page = documentContext.read("$[*]");
+		JSONArray page = documentContext.read("$._embedded.cashCardList");
 		assertThat(page.size()).isEqualTo(3);
 
 		JSONArray amounts = documentContext.read("$..amount");

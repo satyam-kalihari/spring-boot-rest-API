@@ -8,23 +8,26 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.data.domain.Pageable;
 import java.net.URI;
 import java.security.Principal;
-import java.util.List;
 import java.util.Optional;
-// import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.data.web.PagedResourcesAssembler;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 
 @RestController
 @RequestMapping("/cashcards")
-class CashCardController {
+public class CashCardController {
 
     private final CashCardRepository cashCardRepository;
 
-    private CashCardController(CashCardRepository cashCardRepository) {
+    public CashCardController(CashCardRepository cashCardRepository) {
         this.cashCardRepository = cashCardRepository;
     }
 
     @GetMapping
-    private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal){
+    public ResponseEntity<PagedModel<EntityModel<CashCard>>> findAll(Pageable pageable, Principal principal, PagedResourcesAssembler<CashCard> assembler){
         Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
                 PageRequest.of(
                         pageable.getPageNumber(),
@@ -32,7 +35,9 @@ class CashCardController {
                         pageable.getSortOr(Sort.by(Sort.Direction.ASC,"amount"))
                 )
         );
-        return ResponseEntity.ok(page.getContent());
+        return ResponseEntity.ok(assembler.toModel(page, cashCard -> EntityModel.of(cashCard,
+                linkTo(methodOn(CashCardController.class).findById(cashCard.id(), principal)).withSelfRel(),
+                linkTo(methodOn(CashCardController.class).findAll(pageable, principal, assembler)).withRel("cashcards"))));
     }
 
 //    Reduce Code Duplication
@@ -41,11 +46,14 @@ class CashCardController {
     }
 
     @GetMapping("/{requestedId}")
-    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
+    public ResponseEntity<EntityModel<CashCard>> findById(@PathVariable Long requestedId, Principal principal) {
 
         CashCard cashCard = findCashCard(requestedId, principal);
         if (cashCard != null) {
-            return ResponseEntity.ok(cashCard);
+            EntityModel<CashCard> entityModel = EntityModel.of(cashCard,
+                    linkTo(methodOn(CashCardController.class).findById(requestedId, principal)).withSelfRel(),
+                    linkTo(methodOn(CashCardController.class).findAll(PageRequest.of(0, 20), principal, null)).withRel("cashcards"));
+            return ResponseEntity.ok(entityModel);
         }
         else{
             return ResponseEntity.notFound().build(); //.build() => it returns the empty body
@@ -54,7 +62,7 @@ class CashCardController {
     }
 
     @PostMapping
-    private ResponseEntity<Void>  createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ucb, Principal principal) {
+    public ResponseEntity<Void> createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ucb, Principal principal) {
 
         CashCard cashCardwithOwner = new CashCard(null, newCashCardRequest.amount(), principal.getName());
 
@@ -67,7 +75,7 @@ class CashCardController {
     }
 
     @PutMapping("/{requestedId}")
-    private ResponseEntity<Void> putCashCard(@PathVariable Long requestedId, @RequestBody CashCard cashCardUpdate, Principal principal) {
+    public ResponseEntity<Void> putCashCard(@PathVariable Long requestedId, @RequestBody CashCard cashCardUpdate, Principal principal) {
         // just return 204 NO CONTENT for now.
         CashCard cashCard = findCashCard(requestedId, principal);
         if (null != cashCard) {
@@ -79,7 +87,7 @@ class CashCardController {
     }
 
     @DeleteMapping("/{id}")
-    private ResponseEntity<Void> deleteCashCard(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<Void> deleteCashCard(@PathVariable Long id, Principal principal) {
 
         if (cashCardRepository.existsByIdAndOwner(id, principal.getName())) {
             cashCardRepository.deleteById(id);

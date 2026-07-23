@@ -26,6 +26,7 @@ dependencies {
 	implementation 'org.springframework.data:spring-data-jdbc'
    	implementation 'com.h2database:h2'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-hateoas'
 }
 
 tasks.named('test') {
