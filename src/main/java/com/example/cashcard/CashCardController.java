@@ -8,7 +8,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.data.domain.Pageable;
 import java.net.URI;
 import java.security.Principal;
-import java.util.Optional;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.data.web.PagedResourcesAssembler;
